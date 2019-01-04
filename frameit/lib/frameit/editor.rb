@@ -7,6 +7,7 @@ require_relative 'offsets'
 require_relative 'config_parser'
 require_relative 'strings_parser'
 require_relative 'device_types'
+require_relative 'text_alignment'
 
 module Frameit
   # Currently the class is 2 lines too long. Reevaluate refactoring when it's length changes significantly
@@ -425,13 +426,19 @@ module Frameit
         text.gsub!(/(?<!\\)(')/) { |s| "\\#{s}" } # escape unescaped apostrophes with a backslash
 
         interline_spacing = @config['interline_spacing']
+        gravity = text_alignment(key)
 
         # Add the actual title
         text_image.combine_options do |i|
           i.font(current_font) if current_font
+
           i.weight(@config[key.to_s]['font_weight']) if @config[key.to_s]['font_weight']
           i.gravity("Center")
           i.pointsize(actual_font_size(key))
+          # switchCTRL
+          # i.gravity(gravity)
+          # i.pointsize(actual_font_size)
+
           i.draw("text 0,0 '#{text}'")
           i.interline_spacing(interline_spacing) if interline_spacing
           i.fill(@config[key.to_s]['color'])
@@ -555,6 +562,25 @@ module Frameit
 
       UI.verbose("No custom font specified for #{screenshot}, using the default one")
       return nil
+    end
+
+    # The text alignment we want to use
+    def text_alignment(key)
+      
+      alignment = @config[key.to_s]['alignment']
+
+      case alignment.to_s.downcase
+      when "left"
+        return Frameit::TextAlignment::LEFT
+      when "right"
+        return Frameit::TextAlignment::RIGHT
+      when nil
+        UI.verbose("No custom text alignment specified for #{key}, using default 'Center'")
+      else
+        UI.important("Unknown custom text alignment '#{alignment}' specified for #{key}, using default 'Center'")
+      end
+
+      return Frameit::TextAlignment::CENTER
     end
   end
 end
